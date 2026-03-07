@@ -6,6 +6,7 @@
     <title>犬窪農園 | 日本の誉れ、出水の恵み</title>
     
     <!-- React, ReactDOM, Babel, Tailwind CSS をインターネット経由で読み込み -->
+    <!-- これらが「翻訳機」の役割を果たし、ブラウザがReactを理解できるようにします -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -45,6 +46,7 @@
         }
         .fade-in.visible {
             opacity: 1;
+            transform: translateY(0);
         }
     </style>
 </head>
@@ -99,9 +101,9 @@
         ];
 
         const PROCESS_STEPS = [
-            { id: 'step1', number: '01', title: '土作りと種まき', enTitle: 'Soil Preparation & Sowing', description: '美味しいお米は、健全な土壌から生まれます。冬の間から有機肥料をすき込み、微生物が豊かに息づくふかふかの土を作ります。', image: IMAGE_RESOURCES.process1 },
+            { id: 'step1', number: '01', title: '土作りと種まき', enTitle: 'Soil Preparation & Sowing', description: '美味しいお米は、健全な土壌から生まれます。冬の間から有機肥料をすき込み、微生物が豊かに息づくふかふかの土を作ります。種もみは厳選し、力強い苗になるよう徹底した温度管理のもとで大切に育てます。', image: IMAGE_RESOURCES.process1 },
             { id: 'step2', number: '02', title: '田植え', enTitle: 'Rice Planting', description: '初夏、出水の山々から湧き出るミネラル豊富な伏流水を田んぼに引き入れます。苗を丁寧に植え付けていきます。', image: IMAGE_RESOURCES.process2 },
-            { id: 'step3', number: '03', title: '日々の管理', enTitle: 'Daily Care & Weeding', description: '稲が成長する間、毎日田んぼに足を運びます。天候や稲の顔色を見ながら細やかな管理を行い、愛情を持って育てます。', image: IMAGE_RESOURCES.process3 },
+            { id: 'step3', number: '03', title: '日々の管理', enTitle: 'Daily Care & Weeding', description: '稲が成長する間、毎日田んぼに足を運びます。天候や水のコンディションを見ながら愛情を込めて育てます。', image: IMAGE_RESOURCES.process3 },
             { id: 'step4', number: '04', title: '収穫と乾燥', enTitle: 'Harvesting & Drying', description: '秋、黄金色に輝く稲穂を収穫。風味を損なわないよう、ゆっくりと時間をかけて乾燥させ、極上のツヤを生み出します。', image: IMAGE_RESOURCES.process4 }
         ];
 
@@ -141,7 +143,7 @@
                                 <div className="absolute z-20 w-full mt-1 bg-white border border-gray-100 shadow-lg font-tsukushi">
                                     {product.options.map((o, i) => (
                                         <div key={i} className="py-3 px-5 hover:bg-gray-50 cursor-pointer" onClick={() => { setSelectedIdx(i); setOpen(false); }}>
-                                            <span className="font-bold">{o.weight}</span>kg
+                                            <span className="font-bold font-tsukushi">{o.weight}</span>kg
                                         </div>
                                     ))}
                                 </div>
@@ -190,10 +192,10 @@
                     ].map((v, i) => (
                         <div key={i} className="bg-white p-8 md:p-10 shadow-sm border border-gray-100 text-left relative overflow-hidden group flex-grow flex flex-col justify-between font-serif">
                             <div className="absolute top-0 left-0 w-1 h-full bg-[#b49b57] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
-                            <p className="leading-[2.2] mb-6 text-gray-600 text-[13px] md:text-sm italic">「{v.text}」</p>
+                            <p className="leading-[2.2] mb-6 text-gray-600 text-[13px] md:text-sm italic italic">「{v.text}」</p>
                             <div className="flex justify-end items-center gap-3">
                                 <div className="w-6 h-px bg-[#b49b57]/30"></div>
-                                <p className="text-[9px] md:text-[10px] text-gray-400 tracking-[0.2em] font-serif font-bold uppercase">{v.info}</p>
+                                <p className="text-[9px] md:text-[10px] text-gray-400 tracking-[0.2em] font-bold">{v.info}</p>
                             </div>
                         </div>
                     ))}
