@@ -1,0 +1,591 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { ShoppingCart, Check, X, ChevronDown, Mail, Leaf, Droplets, MapPin, ArrowRight, Quote } from 'lucide-react';
+
+/**
+ * 【画像設定ガイド】
+ */
+const IMAGE_RESOURCES = {
+  hero: "https://lh3.googleusercontent.com/u/0/d/1TVjgyKAhUQlyg_M4g4ewen7EJJgWIlWu",
+  heroFallback: "https://yuime.jp/ogi/24664261_s-QAdmhbcqsk.jpg",
+  whiteRice: "https://lh3.googleusercontent.com/u/0/d/1mOZfhSIvYnPalFDm131sKem5e-jo5Cx2",
+  whiteRiceFallback: "https://images.unsplash.com/photo-1516684732162-798a0062be99?auto=format&fit=crop&q=80&w=1000",
+  brownRice: "https://lh3.googleusercontent.com/u/0/d/1ncGFwfObqD3xt-puVdpLugWE9NwCdLU-",
+  brownRiceFallback: "https://images.unsplash.com/photo-1533219057257-4bb9ed5d2cc6?auto=format&fit=crop&q=80&w=1000",
+  terroir: "https://lh3.googleusercontent.com/u/0/d/1MfpnRvb01JIxhkxD2JmNG14cmZbscUBq",
+  terroirFallback: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=1200",
+  process1: "https://lh3.googleusercontent.com/u/0/d/1LJ1hE7ULJN57jA850hDpv2K8CEtpa6qN",
+  process2: "https://lh3.googleusercontent.com/u/0/d/1mBHr4Fnscrm3yX2sgrKzcmt6eVhOwvjl",
+  process3: "https://lh3.googleusercontent.com/u/0/d/1nuzFven1DtKM2_1YDe3sze9OhDsqWrmT",
+  process4: "https://lh3.googleusercontent.com/u/0/d/153YelLzL-pKOXJi3uZ2DgCWjmTeQ0cNN"
+};
+
+// --- Custom Hooks ---
+
+const useScrollFadeIn = (direction = 'up', duration = 1, delay = 0) => {
+  const domRef = useRef();
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+    const currentRef = domRef.current;
+    if (currentRef) observer.observe(currentRef);
+    return () => { if (currentRef) observer.unobserve(currentRef); };
+  }, []);
+
+  let translateStyle = {};
+  if (direction === 'up') translateStyle = { transform: isVisible ? 'translateY(0)' : 'translateY(30px)' };
+  if (direction === 'left') translateStyle = { transform: isVisible ? 'translateX(0)' : 'translateX(30px)' };
+  if (direction === 'right') translateStyle = { transform: isVisible ? 'translateX(0)' : 'translateX(-30px)' };
+
+  return {
+    ref: domRef,
+    style: {
+      opacity: isVisible ? 1 : 0,
+      transition: `opacity ${duration}s ease-out ${delay}s, transform ${duration}s ease-out ${delay}s`,
+      ...translateStyle,
+    },
+  };
+};
+
+// --- Data ---
+
+const PRODUCTS = [
+  {
+    id: 'white-rice',
+    name: '極上 白米',
+    enName: 'Premium White Rice',
+    description: '出水の清らかな水と豊かな大地が育んだ、甘みとツヤが際立つ白米。一粒一粒が輝く、お米本来の深い味わいをご堪能ください。',
+    image: IMAGE_RESOURCES.whiteRice,
+    fallback: IMAGE_RESOURCES.whiteRiceFallback,
+    options: [
+      { weight: 5, price: 4500 },
+      { weight: 10, price: 8500 },
+      { weight: 15, price: 12000 },
+      { weight: 20, price: 15500 },
+    ]
+  },
+  {
+    id: 'brown-rice',
+    name: '特選 玄米',
+    enName: 'Selected Brown Rice',
+    description: '栄養価が高く、力強い生命力を感じる玄米。徹底した品質管理で、安心してお召し上がりいただける出水の恵みです。',
+    image: IMAGE_RESOURCES.brownRice,
+    fallback: IMAGE_RESOURCES.brownRiceFallback,
+    options: [
+      { weight: 5, price: 4200 },
+      { weight: 10, price: 8000 },
+      { weight: 15, price: 11500 },
+      { weight: 20, price: 14800 },
+    ]
+  }
+];
+
+const PROCESS_STEPS = [
+  {
+    id: 'step1',
+    number: '01',
+    title: '土作りと種まき',
+    enTitle: 'Soil Preparation & Sowing',
+    description: '美味しいお米は、健全な土壌から生まれます。冬の間から有機肥料をすき込み、微生物が豊かに息づくふかふかの土を作ります。種もみは厳選し、力強い苗になるよう徹底した温度管理のもとで大切に育てます。',
+    image: IMAGE_RESOURCES.process1
+  },
+  {
+    id: 'step2',
+    number: '02',
+    title: '田植え',
+    enTitle: 'Rice Planting',
+    description: '初夏、出水の山々から湧き出るミネラル豊富な伏流水を田んぼに引き入れます。水面に青空が映る中、一本一本の苗を丁寧に植え付けていきます。この時期の水加減が、後のお米の生育を大きく左右します。',
+    image: IMAGE_RESOURCES.process2
+  },
+  {
+    id: 'step3',
+    number: '03',
+    title: '日々の管理',
+    enTitle: 'Daily Care & Weeding',
+    description: '稲が成長する間、毎日田んぼに足を運びます。天候や稲の顔色を見ながら細やかな水管理を行い、農薬を極力減らすために手作業での草引きも欠かしません。自然と対話しながら、健やかな成長を見守ります。',
+    image: IMAGE_RESOURCES.process3
+  },
+  {
+    id: 'step4',
+    number: '04',
+    title: '収穫と乾燥',
+    enTitle: 'Harvesting & Drying',
+    description: '秋、黄金色に輝く稲穂が頭を垂れたら収穫の時です。刈り取った後は、お米の風味や甘みを損なわないよう、ゆっくりと時間をかけて低温で乾燥させます。このひと手間が、極上のツヤと粘りを生み出します。',
+    image: IMAGE_RESOURCES.process4
+  }
+];
+
+// --- Sub-Components (Sections) ---
+
+const HeroSection = () => {
+  const fade = useScrollFadeIn('up', 1.5, 0.2);
+  return (
+    <section className="relative h-screen flex items-center justify-center overflow-hidden bg-white">
+      <div className="absolute inset-0">
+        <img src={IMAGE_RESOURCES.hero} alt="Hero" className="w-full h-full object-cover scale-105 animate-[slowZoom_30s_ease-in-out_infinite_alternate]" />
+        <div className="absolute inset-0 bg-black/10"></div>
+      </div>
+      <div {...fade} className="relative z-10 text-center text-white px-6 mt-20 flex flex-col items-center">
+        <p className="text-[#FFD700] font-serif tracking-[0.4em] mb-8 text-[11px] md:text-xs uppercase font-bold drop-shadow-lg">Premium Japanese Rice from Izumi</p>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif tracking-[0.3em] mb-10 leading-tight drop-shadow-lg">日本の誉れ、出水の恵み。</h1>
+        <p className="text-[12px] md:text-[14px] font-serif tracking-[0.3em] font-light leading-[2.5] drop-shadow-lg max-w-3xl">
+          万羽鶴が舞い降りる地、鹿児島県出水市。<br className="hidden md:block"/>
+          清らかな水と、農家の誇りが育んだ極上の一粒。
+        </p>
+      </div>
+      <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex flex-col items-center text-white/90 animate-bounce">
+        <span className="text-[9px] tracking-[0.4em] mb-4 font-serif uppercase">Scroll</span>
+        <div className="w-px h-12 bg-gradient-to-b from-white to-transparent"></div>
+      </div>
+    </section>
+  );
+};
+
+const AboutSection = () => {
+  const fade1 = useScrollFadeIn('right', 1);
+  const fade2 = useScrollFadeIn('left', 1, 0.2);
+  return (
+    <section id="about" className="py-24 md:py-40 bg-white">
+      <div className="max-w-7xl mx-auto px-8">
+        <div className="text-center mb-24 md:mb-32">
+          <span className="text-[#b49b57] text-[10px] tracking-[0.4em] font-serif block mb-6 uppercase">Terroir / 出水の風土</span>
+          <h2 className="text-2xl md:text-4xl font-serif text-[#2c2c2c] tracking-[0.15em] mb-4">世界に誇る、出水のテロワール</h2>
+          <div className="w-16 h-px bg-[#b49b57] mx-auto opacity-40"></div>
+        </div>
+        <div className="grid md:grid-cols-2 gap-16 md:gap-24 items-start">
+          <div {...fade1} className="relative h-[250px] md:h-[320px] overflow-hidden shadow-2xl">
+            <img src={IMAGE_RESOURCES.terroir} alt="Terroir" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 border border-[#b49b57]/30 m-5"></div>
+          </div>
+          <div {...fade2} className="space-y-8">
+            <div className="flex items-center gap-4 text-[#b49b57]">
+              <MapPin size={20} />
+              <span className="text-[10px] tracking-[0.2em] uppercase font-serif">Kagoshima, Izumi City</span>
+            </div>
+            <h3 className="text-base md:text-xl font-serif text-[#2c2c2c] leading-[1.8] tracking-wide">
+              鹿児島県出水市。<br/>
+              <span className="whitespace-nowrap">手つかずの自然と、清らかな伏流水。</span>
+            </h3>
+            <p className="text-gray-500 leading-[2.4] font-serif text-[13px] md:text-[14px]">
+              毎年一万羽を超えるツルが越冬のためにシベリアから飛来する出水市.
+              ツルが選ぶほど豊かで清浄な自然環境が、ここにあります.
+              山々から湧き出るミネラル豊富な伏流水と、昼夜の寒暖差が、
+              お米の一粒一粒に深い甘みと粘りを閉じ込めます.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const ProductCard = ({ product, onAddToCart }) => {
+  const [selectedOptionIdx, setSelectedOptionIdx] = useState(0);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const selectedOption = product.options[selectedOptionIdx];
+  const fadeProps = useScrollFadeIn('up', 0.8);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) setIsDropdownOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div {...fadeProps} className="bg-white shadow-sm border border-gray-100 overflow-hidden group">
+      <div className="relative h-80 md:h-96 overflow-hidden">
+        <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+      </div>
+      <div className="p-8 md:p-10 text-left">
+        <h3 className="text-xl md:text-2xl font-serif text-[#2c2c2c] mb-1">{product.name}</h3>
+        <p className="text-[11px] text-[#b49b57] tracking-[0.2em] mb-6 font-serif uppercase">{product.enName}</p>
+        <p className="text-gray-500 text-[13px] leading-[2.1] mb-8 h-20 overflow-hidden font-serif">{product.description}</p>
+        <div className="mb-8">
+          <label className="block text-[10px] text-gray-400 mb-3 font-serif uppercase tracking-[0.2em]">Select Weight / 内容量</label>
+          <div className="relative" ref={dropdownRef}>
+            <div 
+              className={`w-full bg-[#fcfbf9] border ${isDropdownOpen ? 'border-[#b49b57]' : 'border-gray-100'} text-[#2c2c2c] py-4 px-5 pr-10 cursor-pointer flex items-center justify-between transition-colors`}
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+              <span>
+                <span className="font-tsukushi font-serif font-bold text-base md:text-lg">{selectedOption.weight}</span>
+                <span className="font-serif text-sm ml-1 text-gray-500">kg</span>
+              </span>
+              <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} size={16} />
+            </div>
+            {isDropdownOpen && (
+              <div className="absolute z-20 w-full mt-1 bg-white border border-gray-100 shadow-lg">
+                {product.options.map((opt, idx) => (
+                  <div key={idx} className={`py-3 px-5 cursor-pointer transition-colors ${selectedOptionIdx === idx ? 'bg-[#fcfbf9] text-[#b49b57]' : 'hover:bg-gray-50'}`}
+                    onClick={() => { setSelectedOptionIdx(idx); setIsDropdownOpen(false); }}>
+                    <span className="font-tsukushi font-serif font-bold text-base md:text-lg">{opt.weight}</span>
+                    <span className="font-serif text-sm ml-1 text-gray-500">kg</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex justify-between items-end mb-10">
+          <span className="text-[10px] text-gray-400 font-serif uppercase tracking-[0.2em]">Price / 金額（税込）</span>
+          <span className="text-2xl md:text-4xl font-tsukushi font-serif font-bold text-[#2c2c2c]">¥{selectedOption.price.toLocaleString()}</span>
+        </div>
+        <button onClick={() => onAddToCart(product, selectedOption)} className="w-full bg-[#2c2c2c] text-white py-5 font-serif tracking-[0.2em] hover:bg-[#b49b57] transition-all duration-500 flex justify-center items-center gap-3 text-[11px] uppercase">
+          <ShoppingCart size={16} /> BUY NOW / ご購入手続き
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const ProcessStep = ({ step, index }) => {
+  const isReverse = index % 2 !== 0;
+  const imageFade = useScrollFadeIn(isReverse ? 'left' : 'right', 1);
+  const textFade = useScrollFadeIn(isReverse ? 'right' : 'left', 1, 0.2);
+
+  return (
+    <div className={`flex flex-col md:flex-row gap-10 md:gap-20 items-start mb-24 md:mb-32 last:mb-0 ${isReverse ? 'md:flex-row-reverse' : ''}`}>
+      <div {...imageFade} className="w-full md:w-1/2 relative h-[250px] md:h-[400px] overflow-hidden group shadow-md border border-gray-50">
+        <img src={step.image} alt={step.title} className="w-full h-full object-cover transition-transform duration-[2000ms] group-hover:scale-105" />
+        <div className="absolute top-0 left-0 bg-[#2c2c2c] text-white w-12 md:w-16 h-12 md:h-16 flex items-center justify-center font-tsukushi font-serif font-bold text-xl md:text-2xl tracking-widest">
+          {step.number}
+        </div>
+      </div>
+      <div {...textFade} className="w-full md:w-1/2 space-y-5 md:space-y-8 px-4 md:px-0 text-left">
+        <span className="text-[#b49b57] text-[10px] tracking-[0.3em] font-serif uppercase block">{step.enTitle}</span>
+        <h3 className="text-xl md:text-3xl font-serif text-[#2c2c2c] tracking-widest">{step.title}</h3>
+        <p className="text-gray-500 leading-[2.4] font-serif text-[13px] md:text-[14px]">{step.description}</p>
+      </div>
+    </div>
+  );
+};
+
+// --- Page Views ---
+
+const VoicesSectionContent = () => (
+  <div className="grid md:grid-cols-2 gap-12 md:gap-20 items-stretch">
+    {/* Producer Side */}
+    <div className="flex flex-col">
+      <h3 className="text-[#b49b57] font-serif text-sm md:text-lg tracking-[0.15em] mb-6 md:mb-8 uppercase whitespace-nowrap overflow-hidden text-left border-l-2 border-[#b49b57] pl-4">
+        Producer / 生産者の想い
+      </h3>
+      {/* 余白を削減（p-8 md:p-14 から px-6 py-8 md:px-10 md:py-14 に調整） */}
+      <div className="bg-white px-6 py-8 md:px-10 md:py-14 border border-gray-100 shadow-sm relative text-left flex-grow flex flex-col justify-between">
+        <Quote className="absolute top-6 right-6 md:top-10 md:right-10 opacity-5 text-[#b49b57]" size={80} />
+        <div>
+          {/* 文字サイズを縮小（text-sm md:text-base から text-[12px] md:text-[14px] 程度に調整） */}
+          <p className="font-serif text-[12px] md:text-[14px] leading-[2.4] italic mb-10 text-gray-700">
+            「お米作りは、私にとって子育てと同じです。春の種まきから秋の収穫まで、一日たりとも田んぼを忘れることはありません。毎日夜明けとともに足を運び、稲の揺れ方や色味からその日のコンディションを感じ取り、出水の清らかな水の流れを調整します。天候に左右される厳しさもありますが、一粒一粒が栄養を蓄え、黄金色に輝いていく姿は、まさに手塩にかけて育てた我が子の成長を見守る喜びそのものです。一切の妥協をせず、誠実に土と向き合い続けた結果生まれたこのお米が、皆様の食卓に笑顔と活力をもたらすことを心より願っております。」
+          </p>
+        </div>
+        <div className="pt-8 border-t border-gray-100 flex items-center gap-5">
+          <div className="w-16 h-16 bg-gray-200 rounded-full overflow-hidden border-2 border-gray-50 shadow-sm">
+            <img src="https://images.unsplash.com/photo-1595841696677-6489ff3f8cd1?w=200" className="object-cover w-full h-full" alt="Farmer" />
+          </div>
+          <div>
+            <p className="font-serif text-base text-[#2c2c2c] font-bold">犬窪 功一</p>
+            <p className="text-[10px] text-[#b49b57] uppercase tracking-widest">INUKUBO FARM / 代表</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Customer Side */}
+    <div className="flex flex-col space-y-6 md:space-y-10">
+      <h3 className="text-[#b49b57] font-serif text-sm md:text-lg tracking-[0.15em] mb-0 uppercase whitespace-nowrap overflow-hidden text-left border-l-2 border-[#b49b57] pl-4">
+        Customer / お客様の声
+      </h3>
+      
+      {/* Testimonial 1 */}
+      <div className="bg-white p-8 md:p-10 shadow-sm border border-gray-100 text-left relative overflow-hidden group flex-grow">
+        <div className="absolute top-0 left-0 w-1 h-full bg-[#b49b57] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+        <p className="font-serif leading-[2.2] mb-6 text-gray-600 text-[13px] md:text-sm italic">
+          「炊きあがりのツヤと、蓋を開けた時の甘い香りに感動しました。一口噛むごとに広がる豊かな味わいは、今まで食べていたお米とは全く違います。家族の笑顔が増えました。」
+        </p>
+        <div className="flex justify-end items-center gap-3">
+          <div className="w-6 h-px bg-[#b49b57]/30"></div>
+          <p className="text-[9px] md:text-[10px] text-gray-400 font-serif tracking-[0.2em]">
+            東京都 / <span className="font-tsukushi font-bold">40</span>代 女性
+          </p>
+        </div>
+      </div>
+
+      {/* Testimonial 2 */}
+      <div className="bg-white p-8 md:p-10 shadow-sm border border-gray-100 text-left relative overflow-hidden group flex-grow">
+        <div className="absolute top-0 left-0 w-1 h-full bg-[#b49b57] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
+        <p className="font-serif leading-[2.2] mb-6 text-gray-600 text-[13px] md:text-sm italic">
+          「健康のために玄米を選びましたが、驚くほど食べやすくて美味しいです。プチプチとした食感と噛むほどに増す甘みが癖になります。もう他のお米には戻れません。」
+        </p>
+        <div className="flex justify-end items-center gap-3">
+          <div className="w-6 h-px bg-[#b49b57]/30"></div>
+          <p className="text-[9px] md:text-[10px] text-gray-400 font-serif tracking-[0.2em]">
+            大阪府 / <span className="font-tsukushi font-bold">30</span>代 男性
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const HomePageContent = ({ onAddToCart }) => (
+  <>
+    <HeroSection />
+    <AboutSection />
+    <section id="products" className="py-24 md:py-40 bg-[#fcfbf9]">
+      <div className="max-w-7xl mx-auto px-8">
+        <div className="text-center mb-24 md:mb-32">
+          <span className="text-[#b49b57] text-[10px] tracking-[0.4em] font-serif block mb-6 uppercase">Collection / 商品一覧</span>
+          <h2 className="text-2xl md:text-4xl font-serif text-[#2c2c2c] tracking-[0.15em] mb-4">犬窪農園の極上米</h2>
+          <div className="w-16 h-px bg-[#b49b57] mx-auto opacity-40"></div>
+        </div>
+        <div className="grid md:grid-cols-2 gap-12 md:gap-20">
+          {PRODUCTS.map(product => (
+            <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
+          ))}
+        </div>
+      </div>
+    </section>
+    <section id="process" className="py-24 md:py-40 bg-white overflow-hidden">
+      <div className="max-w-7xl mx-auto px-8">
+        <div className="text-center mb-24 md:mb-32">
+          <span className="text-[#b49b57] text-[10px] tracking-[0.4em] font-serif block mb-6 uppercase">Process / 犬窪米ができるまで</span>
+          <h2 className="text-2xl md:text-4xl font-serif text-[#2c2c2c] tracking-[0.15em] mb-4">極上の一粒を育む, 四季の営み</h2>
+          <div className="w-16 h-px bg-[#b49b57] mx-auto opacity-40"></div>
+        </div>
+        <div className="mt-20">
+          {PROCESS_STEPS.map((step, index) => (
+            <ProcessStep key={step.id} step={step} index={index} />
+          ))}
+        </div>
+      </div>
+    </section>
+    <section id="voices" className="py-24 md:py-40 bg-[#fcfbf9] text-[#2c2c2c]">
+      <div className="max-w-7xl mx-auto px-8">
+        <div className="text-center mb-24 md:mb-32">
+          <span className="text-[#b49b57] text-[10px] tracking-[0.4em] font-serif block mb-6 uppercase text-center">Aspiration / 想いと喜び</span>
+          <h2 className="text-2xl md:text-4xl font-serif tracking-[0.15em] mb-4">生産者とお客様の声</h2>
+          <div className="w-16 h-px bg-[#b49b57] mx-auto opacity-40"></div>
+        </div>
+        <VoicesSectionContent />
+      </div>
+    </section>
+  </>
+);
+
+const PageHeader = ({ enTitle, jaTitle }) => (
+  <div className="text-center pt-32 pb-20 md:pt-48 md:pb-32 bg-white">
+    <span className="text-[#b49b57] text-[10px] tracking-[0.4em] font-serif block mb-6 uppercase">{enTitle}</span>
+    <h2 className="text-2xl md:text-4xl font-serif text-[#2c2c2c] tracking-[0.15em] mb-4">{jaTitle}</h2>
+    <div className="w-16 h-px bg-[#b49b57] mx-auto opacity-40"></div>
+  </div>
+);
+
+export default function App() {
+  const [currentPage, setCurrentPage] = useState('home');
+  const [cart, setCart] = useState(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [orderComplete, setOrderComplete] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentPage]);
+
+  const handleAddToCart = (product, option) => {
+    setCart({ product, option });
+    setIsCheckoutOpen(true);
+    setOrderComplete(false);
+  };
+
+  const navigate = (page) => {
+    setCurrentPage(page);
+  };
+
+  const renderContent = () => {
+    switch (currentPage) {
+      case 'home':
+        return <HomePageContent onAddToCart={handleAddToCart} />;
+      
+      case 'about':
+        return (
+          <div className="bg-white min-h-screen text-left">
+            <PageHeader enTitle="Terroir / 出水の風土" jaTitle="世界に誇る、出水のテロワール" />
+            <div className="max-w-7xl mx-auto px-8 pb-32">
+              <div className="grid md:grid-cols-2 gap-16 md:gap-24 items-start text-left">
+                <div className="relative h-[300px] md:h-[500px] overflow-hidden shadow-2xl">
+                  <img src={IMAGE_RESOURCES.terroir} alt="Terroir" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 border border-[#b49b57]/30 m-5"></div>
+                </div>
+                <div className="space-y-8">
+                  <div className="flex items-center gap-4 text-[#b49b57]">
+                    <MapPin size={24} />
+                    <span className="text-[12px] tracking-[0.3em] uppercase font-serif">Kagoshima, Izumi City</span>
+                  </div>
+                  <h3 className="text-xl md:text-3xl font-serif leading-relaxed text-[#2c2c2c]">手つかずの自然と、<br/>清らかな伏流水。</h3>
+                  <p className="text-gray-500 leading-[2.6] font-serif text-sm md:text-base">
+                    毎年一万羽を超えるツルが越冬のためにシベリアから飛来する出水市。<br/>
+                    ツルが選ぶほど豊かで清浄な自然環境が、ここにあります。<br/><br/>
+                    山々から湧き出るミネラル豊富な伏流水と、盆地特有の昼夜の激しい寒暖差が、
+                    稲の生命力を高め、お米の一粒一粒に深い甘みと粘りを閉じ込めます。
+                    この地でしか成し得ない、究極のテロワールをご賞味ください。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'products':
+        return (
+          <div className="bg-[#fcfbf9] min-h-screen">
+            <PageHeader enTitle="Collection / 商品一覧" jaTitle="犬窪農園の極上米" />
+            <div className="max-w-7xl mx-auto px-8 pb-32">
+              <div className="grid md:grid-cols-2 gap-12 md:gap-20">
+                {PRODUCTS.map(product => (
+                  <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'process':
+        return (
+          <div className="bg-white min-h-screen">
+            <PageHeader enTitle="Process / 犬窪米ができるまで" jaTitle="極上の一粒を育む, 四季の営み" />
+            <div className="max-w-7xl mx-auto px-8 pb-32">
+              {PROCESS_STEPS.map((step, index) => (
+                <ProcessStep key={step.id} step={step} index={index} />
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'voices':
+        return (
+          <div className="bg-[#fcfbf9] min-h-screen">
+            <PageHeader enTitle="Aspiration / 想いと喜び" jaTitle="生産者とお客様の声" />
+            <div className="max-w-7xl mx-auto px-8 pb-32">
+              <VoicesSectionContent />
+            </div>
+          </div>
+        );
+
+      default:
+        return <HomePageContent onAddToCart={handleAddToCart} />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#fcfbf9] font-sans selection:bg-[#b49b57] selection:text-white">
+      {/* Navbar */}
+      <nav className={`fixed w-full z-50 transition-all duration-700 ${scrolled || currentPage !== 'home' ? 'bg-white shadow-sm py-4' : 'bg-transparent py-8'}`}>
+        <div className="max-w-7xl mx-auto px-8 flex justify-between items-center">
+          <button onClick={() => navigate('home')} className={`font-serif tracking-[0.3em] text-lg md:text-xl transition-colors ${scrolled || currentPage !== 'home' ? 'text-[#2c2c2c]' : 'text-white'}`}>
+            犬窪農園 <span className="text-[9px] ml-3 opacity-70 font-sans tracking-[0.4em] uppercase hidden md:inline-block">Inukubo Farm</span>
+          </button>
+          <div className="flex gap-6 md:gap-10 items-center">
+            {[
+              { id: 'about', label: '出水市とは' },
+              { id: 'products', label: '商品一覧' },
+              { id: 'process', label: '犬窪米が出来るまで' },
+              { id: 'voices', label: '想いと喜びの声' }
+            ].map((item) => (
+              <button 
+                key={item.id}
+                onClick={() => navigate(item.id)}
+                className={`text-[10px] md:text-[11px] font-serif tracking-[0.2em] transition-colors ${currentPage === item.id ? 'text-[#b49b57]' : (scrolled || currentPage !== 'home' ? 'text-[#2c2c2c] hover:text-[#b49b57]' : 'text-white hover:text-[#b49b57]')}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      <main>{renderContent()}</main>
+
+      {/* Footer */}
+      <footer className="bg-[#fcfbf9] py-24 text-center font-serif border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-8">
+          <button onClick={() => navigate('home')} className="mb-10 font-serif tracking-[0.4em] text-[#2c2c2c] text-2xl">犬窪農園</button>
+          <p className="text-[10px] tracking-[0.2em] mb-12 uppercase text-gray-400">Izumi City, Kagoshima Prefecture, Japan</p>
+          <div className="w-12 h-px bg-[#b49b57]/40 mx-auto mb-12"></div>
+          <p className="text-[9px] tracking-[0.1em] text-gray-400">© 2026 INUKUBO FARM. ALL RIGHTS RESERVED.</p>
+        </div>
+      </footer>
+
+      {/* Checkout Modal */}
+      {isCheckoutOpen && (
+        <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-6 backdrop-blur-md">
+          <div className="bg-[#fcfbf9] w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+            <button onClick={() => setIsCheckoutOpen(false)} className="absolute top-8 right-8 text-gray-300 hover:text-[#2c2c2c] z-10"><X size={24} /></button>
+            <div className="p-10 md:p-20">
+              {!orderComplete ? (
+                <>
+                  <h2 className="text-2xl font-serif text-[#2c2c2c] tracking-[0.1em] mb-12 border-b border-[#b49b57]/20 pb-6 uppercase text-center">Order / ご購入手続き</h2>
+                  <form onSubmit={(e) => { e.preventDefault(); setTimeout(() => setOrderComplete(true), 1000); }} className="space-y-8 font-serif">
+                    <div className="space-y-3">
+                      <label className="block text-[10px] text-gray-400 uppercase tracking-widest text-left">Name / お名前 *</label>
+                      <input required type="text" className="w-full border-b border-gray-200 p-4 focus:outline-none focus:border-[#b49b57] bg-transparent text-sm" />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="block text-[10px] text-gray-400 uppercase tracking-widest text-left">Email / メールアドレス *</label>
+                      <input required type="email" className="w-full border-b border-gray-200 p-4 focus:outline-none focus:border-[#b49b57] bg-transparent text-sm" />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="block text-[10px] text-gray-400 uppercase tracking-widest text-left">Address / お届け先住所 *</label>
+                      <input required type="text" className="w-full border-b border-gray-200 p-4 focus:outline-none focus:border-[#b49b57] bg-transparent text-sm" />
+                    </div>
+                    <button type="submit" className="w-full bg-[#2c2c2c] text-white py-5 mt-10 hover:bg-[#b49b57] transition-all tracking-[0.3em] text-[11px] uppercase">Confirm Order</button>
+                  </form>
+                </>
+              ) : (
+                <div className="text-center py-10">
+                  <div className="w-24 h-24 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-10"><Check size={48} /></div>
+                  <h2 className="text-2xl font-serif mb-8 text-[#2c2c2c]">ご注文ありがとうございます</h2>
+                  <p className="text-gray-500 font-serif leading-[2.2] mb-12 text-sm">【銀行振込先のご案内】を自動送信いたしました.</p>
+                  <button onClick={() => { setIsCheckoutOpen(false); navigate('home'); }} className="border border-[#2c2c2c] px-12 py-4 hover:bg-[#2c2c2c] hover:text-white transition-all font-serif tracking-[0.3em] text-[10px] uppercase">Back to Home</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{__html: `
+        @font-face {
+          font-family: 'TsukushiMincho';
+          src: local('Tsukushi A Round Mincho'), local('Tsukushi A Mincho'), local('Hiragino Mincho ProN'), serif;
+        }
+        .font-tsukushi {
+          font-family: 'TsukushiMincho', "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", serif;
+        }
+        @keyframes slowZoom {
+          0% { transform: scale(1); }
+          100% { transform: scale(1.1); }
+        }
+        html { scroll-behavior: smooth; }
+      `}} />
+    </div>
+  );
+}
